@@ -1,0 +1,19 @@
+# Pestaña de Teams "Consegsa Tareas": detalle de la tarea que abre cada notificación.
+# nginx (reverse proxy) publica https://<dominio>/notifyTeams/ -> este contenedor.
+services:
+  teams-tab:
+    build: .
+    image: consegsa-teams-tab:1.0.1
+    container_name: consegsa-teams-tab
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: 6090
+    # Solo accesible desde este servidor: nginx entra por 127.0.0.1:6090 (ver README si nginx no usa network_mode: host)
+    ports:
+      - "127.0.0.1:${HOST_PORT:-6090}:6090"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:6090/salud"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
