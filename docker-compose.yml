@@ -7,11 +7,14 @@ services:
     container_name: consegsa-teams-tab
     restart: unless-stopped
     env_file: .env
+    # Lets BACKEND_URL=http://host.docker.internal:<port> reach a backend running on the host (local dev)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       PORT: 6090
-    # Solo accesible desde este servidor: nginx entra por 127.0.0.1:6090 (ver README si nginx no usa network_mode: host)
+    # Default: only reachable from this host (nginx on 127.0.0.1:6090). HOST_BIND=<LAN IP> when nginx runs on another machine
     ports:
-      - "127.0.0.1:${HOST_PORT:-6090}:6090"
+      - "${HOST_BIND:-127.0.0.1}:${HOST_PORT:-6090}:6090"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:6090/salud"]
       interval: 30s

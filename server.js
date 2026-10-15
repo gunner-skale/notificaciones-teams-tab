@@ -59,6 +59,10 @@ function serveStatic(url, res) {
 
 http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
+  // Access log without the signed link (t) or other query values
+  res.on('finish', () => {
+    console.log(`[teams-tab] ${new Date().toISOString()} ${req.method} ${url.pathname} ${res.statusCode} ${req.headers['sec-fetch-dest'] || '-'} ${(req.headers['user-agent'] || '-').slice(0, 80)}`);
+  });
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'Method not allowed', 'text/plain');
   if (url.pathname === '/salud') return sendJson(res, 200, { ok: true });
   if (url.pathname === '/api/tarea') return proxyTarea(url, res);
