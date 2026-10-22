@@ -47,6 +47,17 @@ dt { color: var(--suave); }
 dd { margin: 0; overflow-wrap: anywhere; }
 h2 { font-size: 14px; margin: 0 0 6px; }
 .descripcion { white-space: pre-wrap; margin: 0; overflow-wrap: anywhere; }
+.boton {
+  display: inline-block;
+  margin-top: 16px;
+  background: var(--acento);
+  color: var(--tarjeta);
+  border-radius: 4px;
+  padding: 6px 20px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.boton:hover, .boton:focus-visible { opacity: .9; }
 .mensaje { color: var(--suave); text-align: center; margin-top: 48px; }
 @media (max-width: 480px) {
   dl { grid-template-columns: 1fr; gap: 0; }

@@ -8,6 +8,8 @@ muestra el detalle de la tarea.
   navegador solo habla con este servicio, así que no hay CORS.
 - Cada aviso lleva un **enlace firmado** por el backend (`TEAMS_TAB_SECRET`). Teams se lo pasa a la página como
   `subPageId`, y la tarea se muestra con lo que ese usuario puede ver.
+- Los avisos de `consegsa-notificaciones-api` no consultan ningún backend: traen su contenido en el propio enlace
+  (`m:<base64url de {s: tema, t: título, m: mensaje, u: url}>`) y la página solo lo muestra como texto.
 - **Requisito:** `BACKEND_URL` tiene que ser **el mismo backend que envía los avisos**. Si no, la firma no coincide y
   la página dice "enlace no válido".
 

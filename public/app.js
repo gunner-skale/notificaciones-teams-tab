@@ -1,5 +1,7 @@
 // Shows the task of a Teams notification. Teams passes the notification's signed link as context.page.subPageId;
-// outside Teams (testing in a browser) it is read from ?t=.
+// outside Teams (testing in a browser) it is read from ?t=. A notification of consegsa-notificaciones-api carries
+// "m:<base64url of {s: tema, t: titulo, m: mensaje, u: url}>" (shown as is, only as text) or, in its older format,
+// "u:<url>" (only an "Abrir" button).
 (async function () {
   const contenido = document.getElementById('contenido');
 
@@ -76,12 +78,79 @@
     document.title = `Tarea #${tarea.id} · Consegsa`;
   }
 
+  // Only https links to consegsa.com (and subdomains), the same rule the notifications service applies
+  function urlPermitida(valor) {
+    try {
+      const url = new URL(valor);
+      const host = url.hostname.toLowerCase();
+      return url.protocol === 'https:' && !url.username && (host === 'consegsa.com' || host.endsWith('.consegsa.com')) ? url.href : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // base64url → UTF-8 JSON; null when it is not a valid notification
+  function leerContenido(valor) {
+    try {
+      const base64 = valor.replaceAll('-', '+').replaceAll('_', '/');
+      const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+      const datos = JSON.parse(new TextDecoder().decode(bytes));
+      return datos && typeof datos.t === 'string' ? datos : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function mostrarNotificacion(datos) {
+    const tarjeta = el('article', 'tarjeta');
+    tarjeta.append(el('p', 'numero', typeof datos.s === 'string' && datos.s ? datos.s : 'Notificación de Consegsa'));
+    tarjeta.append(el('h1', null, datos.t));
+    if (typeof datos.m === 'string' && datos.m) {
+      tarjeta.append(el('p', 'descripcion', datos.m));
+    }
+    const url = typeof datos.u === 'string' ? urlPermitida(datos.u) : null;
+    if (url) {
+      const boton = el('a', 'boton', 'Abrir');
+      boton.href = url;
+      boton.target = '_blank';
+      boton.rel = 'noopener noreferrer';
+      tarjeta.append(boton);
+    }
+    contenido.replaceChildren(tarjeta);
+    document.title = `${datos.t} · Consegsa`;
+  }
+
+  function mostrarEnlace(url) {
+    const tarjeta = el('article', 'tarjeta');
+    tarjeta.append(el('p', 'numero', 'Notificación de Consegsa'));
+    tarjeta.append(el('h1', null, 'Esta notificación tiene un enlace'));
+    tarjeta.append(el('p', 'descripcion', new URL(url).hostname));
+    const boton = el('a', 'boton', 'Abrir');
+    boton.href = url;
+    boton.target = '_blank';
+    boton.rel = 'noopener noreferrer';
+    tarjeta.append(boton);
+    contenido.replaceChildren(tarjeta);
+  }
+
   const contexto = await contextoTeams();
   tema(contexto?.app?.theme);
   const enlace = contexto?.page?.subPageId || new URLSearchParams(location.search).get('t');
 
   if (!enlace) {
-    mensaje('Abre una tarea desde una notificación de Consegsa Tareas para ver su detalle.');
+    mensaje('Abre una notificación de Consegsa para ver su detalle.');
+    return;
+  }
+
+  if (enlace.startsWith('m:')) {
+    const datos = leerContenido(enlace.slice(2));
+    datos ? mostrarNotificacion(datos) : mensaje('El contenido de esta notificación no es válido.');
+    return;
+  }
+
+  if (enlace.startsWith('u:')) {
+    const url = urlPermitida(enlace.slice(2));
+    url ? mostrarEnlace(url) : mensaje('El enlace de esta notificación no es válido.');
     return;
   }
 
